@@ -4,9 +4,19 @@ const backBtn = document.getElementById('backBtn');
 const landingPage = document.querySelector('.landing-page');
 const chatPage = document.querySelector('.chat-page');
 
-chatBtn.onclick = () => { landingPage.style.display = 'none'; chatPage.style.display = 'block'; };
-talkBtn.onclick = () => { landingPage.style.display = 'none'; chatPage.style.display = 'block'; startTalkMode(); };
-backBtn.onclick = () => { landingPage.style.display = 'block'; chatPage.style.display = 'none'; };
+chatBtn.onclick = () => { 
+  landingPage.style.display = 'none'; 
+  chatPage.style.display = 'block'; 
+};
+talkBtn.onclick = () => { 
+  landingPage.style.display = 'none'; 
+  chatPage.style.display = 'block'; 
+  startTalkMode(); 
+};
+backBtn.onclick = () => { 
+  landingPage.style.display = 'block'; 
+  chatPage.style.display = 'none'; 
+};
 
 const sendBtn = document.getElementById('sendBtn');
 const userInput = document.getElementById('userInput');
@@ -29,13 +39,22 @@ function appendMessage(sender, text) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// Dummy AI response for now
+// Single correct getAIResponse function
 async function getAIResponse(message) {
-  return "I'm listening: " + message; // Later replace with OpenAI or Hugging Face API
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message })
+  });
+  const data = await response.json();
+  return data.reply;
 }
 
 function startTalkMode() {
-  if(!('webkitSpeechRecognition' in window)) { alert('Your browser does not support speech recognition'); return; }
+  if(!('webkitSpeechRecognition' in window)) { 
+    alert('Your browser does not support speech recognition'); 
+    return; 
+  }
 
   const recognition = new webkitSpeechRecognition();
   recognition.continuous = false;
@@ -57,22 +76,4 @@ function speakText(text) {
   utterance.pitch = 1;
   utterance.rate = 1;
   window.speechSynthesis.speak(utterance);
-}
-
-async function getAIResponse(message) {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
-  });
-  const data = await response.json();
-  return data.reply;
-},
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [{role:'user', content: message}]
-    })
-  });
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
