@@ -25,29 +25,40 @@ const chatWindow = document.getElementById('chatWindow');
 sendBtn.onclick = async () => {
   const message = userInput.value;
   if(!message) return;
+  
   appendMessage('You', message);
   userInput.value = '';
 
+  // Get the response, but don't show it immediately
   const response = await getAIResponse(message);
-  appendMessage('SivaraX', response);
+  
+  // Wait 1.5 seconds to simulate "typing"
+  setTimeout(() => {
+    appendMessage('SivaraX', response);
+  }, 1500);
 };
 
 function appendMessage(sender, text) {
   const msg = document.createElement('div');
-  msg.innerHTML = `<b>${sender}:</b> ${text}`;
+  // I removed the Bold names here to make it look like a real messaging app
+  msg.className = sender === 'You' ? 'user-msg' : 'ai-msg'; 
+  msg.innerHTML = `${text}`; 
   chatWindow.appendChild(msg);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// Single correct getAIResponse function
 async function getAIResponse(message) {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
-  });
-  const data = await response.json();
-  return data.reply;
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+    const data = await response.json();
+    return data.reply;
+  } catch (error) {
+    return "damn, server's acting up. my bad.";
+  }
 }
 
 function startTalkMode() {
@@ -66,14 +77,17 @@ function startTalkMode() {
     appendMessage('You', speech);
 
     const response = await getAIResponse(speech);
-    appendMessage('SivaraX', response);
-    speakText(response);
+    
+    setTimeout(() => {
+        appendMessage('SivaraX', response);
+        speakText(response);
+    }, 1200);
   };
 }
 
 function speakText(text) {
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.pitch = 1;
+  utterance.pitch = 1.1; // Slightly higher pitch feels more youthful/human
   utterance.rate = 1;
   window.speechSynthesis.speak(utterance);
 }
