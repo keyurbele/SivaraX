@@ -3,9 +3,8 @@ export default async function handler(req, res) {
 
   const { message } = req.body;
 
-  // 1. Safety Check: Is the key actually there?
   if (!process.env.GROQ_API_KEY) {
-    return res.status(500).json({ reply: "Backend Error: GROQ_API_KEY is missing in Vercel Settings." });
+    return res.status(500).json({ reply: "Backend Error: GROQ_API_KEY is missing." });
   }
 
   try {
@@ -16,9 +15,9 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "openai/gpt-oss-20b", // <--- Current 2026 Production Model
         messages: [
-          { role: "system", content: "You are SivaraX, a supportive AI." },
+          { role: "system", content: "You are SivaraX, a supportive AI that listens without judgment." },
           { role: "user", content: message }
         ]
       })
@@ -26,16 +25,14 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // 2. Safety Check: Did Groq return an error (like an invalid key)?
     if (data.error) {
       return res.status(500).json({ reply: "Groq API Error: " + data.error.message });
     }
 
-    // 3. Safety Check: Does the answer actually exist?
     if (data.choices && data.choices[0] && data.choices[0].message) {
       return res.status(200).json({ reply: data.choices[0].message.content });
     } else {
-      return res.status(500).json({ reply: "Error: Received an unexpected empty response from the AI." });
+      return res.status(500).json({ reply: "Error: Received an empty response." });
     }
 
   } catch (err) {
