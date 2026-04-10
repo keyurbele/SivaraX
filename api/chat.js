@@ -1,10 +1,21 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ reply: "method not allowed" });
 
-  const { message } = req.body;
+  // Destructure message and the new user context (name, mode, etc.)
+  const { message, context } = req.body;
 
   if (!process.env.GROQ_API_KEY) {
     return res.status(500).json({ reply: "backend error: key missing" });
+  }
+
+  // Define how the AI should act based on the selected mode
+  let modeInstruction = "";
+  if (context?.mode === 'reality') {
+    modeInstruction = "Your mode is REALITY CHECK. Be brutally honest but still a friend. If the user is trippin, call them out. Use 'ngl' and 'fr' to keep it real.";
+  } else if (context?.mode === 'feedback') {
+    modeInstruction = "Your mode is FEEDBACK. Give actual helpful advice and constructive thoughts on what they are saying.";
+  } else {
+    modeInstruction = "Your mode is LISTENER. Just be a supportive ear. Don't give advice unless they ask. Just validate their feelings.";
   }
 
   try {
@@ -20,13 +31,20 @@ export default async function handler(req, res) {
           { 
             role: "system", 
             content: `
-              You are SivaraX, a chill, empathetic friend. 
-              TONE: Low-energy, casual, and supportive. Use Gen Z slang (ngl, fr, real, cooked, valid).
+              You are SivaraX, a real person. You are chatting with ${context?.name || "a friend"}.
+              
+              CORE VIBE:
+              - Low-energy, casual Gen Z style. 
+              - Use lowercase mostly. No periods.
+              - Use slang like: ngl, fr, real, cooked, type shit, valid, lowkey.
+              
+              PERSONALITY MODE:
+              ${modeInstruction}
+
               EXPRESSIVE RULES: 
               1. MIRROR the user: If they use long words (like 'sooooo'), you do it too.
               2. Use "expressive lengthening" (e.g., 'damnnnn', 'reallll').
-              3. Lowercase only. No periods.
-              4. If they are sad, be like "damn i'm sorry fr" or "that's heavy". Never be rude.
+              3. NEVER sound like a helpful assistant. Sound like a person in a DM.
             ` 
           },
           { role: "user", content: message }
