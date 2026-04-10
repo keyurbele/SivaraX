@@ -8,18 +8,29 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <div class="landing-page">
-    <h1>SivaraX</h1>
-    <p>The AI that listens without judgment</p>
-    <button id="chatBtn">Chat</button>
-    <button id="talkBtn">Talk</button>
+    <div class="hero-content">
+      <h1>SivaraX</h1>
+      <p>the ai that actually listens.</p>
+      <div class="landing-btns">
+        <button id="chatBtn">chat</button>
+        <button id="talkBtn">talk</button>
+      </div>
+    </div>
   </div>
 
   <div class="chat-page" style="display:none;">
-    <div id="chatWindow"></div>
-    <input type="text" id="userInput" placeholder="Type your message...">
-    <button id="sendBtn">Send</button>
-    <button id="backBtn">Back</button>
+    <button id="backBtn">back</button>
+    <h1>SivaraX</h1>
+    
+    <div id="chatWindow">
+      </div>
+
+    <div class="input-container">
+      <input type="text" id="userInput" placeholder="type smth..." autocomplete="off">
+      <button id="sendBtn">↑</button>
+    </div>
   </div>
 
   <script src="script.js"></script>
