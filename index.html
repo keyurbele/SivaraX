@@ -3,67 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SivaraX - AI That Listens Without Judgment</title>
-  <meta name="description" content="SivaraX is a friendly AI chatbot that listens, supports, and helps you vent safely without judgment.">
+  <title>SivaraX</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <div id="setupOverlay" style="display:none;">
-    <div class="setup-card">
-      <h2>Welcome to SivaraX</h2>
-      <p>how should i address you?</p>
-      <input type="text" id="nameInput" placeholder="your name..." autocomplete="off">
-      
-      <p>pick my voice vibe:</p>
-      <div class="setup-btns">
-        <!-- ✅ FIXED (added 'this') -->
-        <button onclick="setVoice('female', this)">soft / female</button>
-        <button onclick="setVoice('male', this)">deep / male</button>
-      </div>
+<!-- SETUP -->
+<div id="setupOverlay">
+  <div class="setup-card">
+    <h2>Welcome to SivaraX</h2>
 
-      <button id="finishSetup" class="primary-btn">start venting</button>
+    <input type="text" id="nameInput" placeholder="your name...">
+
+    <div class="setup-btns">
+      <button onclick="setVoice('female', this)">female</button>
+      <button onclick="setVoice('male', this)">male</button>
     </div>
+
+    <button id="finishSetup">start</button>
+  </div>
+</div>
+
+<!-- LANDING -->
+<div class="landing-page">
+  <h1>SivaraX</h1>
+  <p>talk to someone</p>
+
+  <button id="chatBtn">chat</button>
+  <button id="talkBtn">talk</button>
+</div>
+
+<!-- CHAT -->
+<div class="chat-page">
+
+  <div class="chat-header">
+    <button id="backBtn">back</button>
+    <h2>SivaraX</h2>
   </div>
 
-  <div class="landing-page">
-    <div class="hero-content">
-      <div class="logo-glow"></div>
-      <h1>SivaraX</h1>
-      <p>the ai that actually listens.</p>
-      <div class="landing-btns">
-        <button id="chatBtn">chat</button>
-        <button id="talkBtn">talk</button>
-      </div>
-    </div>
+  <div class="mode-selector">
+    <button class="mode-btn active" onclick="setMode('listener', this)">listener</button>
+    <button class="mode-btn" onclick="setMode('reality', this)">reality</button>
+    <button class="mode-btn" onclick="setMode('feedback', this)">feedback</button>
   </div>
 
-  <div class="chat-page" style="display:none;">
-    <div class="chat-header">
-      <button id="backBtn">back</button>
-      <h1>SivaraX</h1>
-      <div class="header-status">online</div>
-    </div>
+  <div id="chatWindow"></div>
 
-    <div class="mode-selector">
-      <!-- ✅ FIXED (added 'this') -->
-      <button class="mode-btn active" onclick="setMode('listener', this)">listener</button>
-      <button class="mode-btn" onclick="setMode('reality', this)">reality check</button>
-      <button class="mode-btn" onclick="setMode('feedback', this)">feedback</button>
-    </div>
-    
-    <div id="chatWindow"></div>
+  <div id="siriWave"></div>
 
-    <!-- Siri Wave -->
-    <div id="siriWave"></div>
-
-    <div class="input-container">
-      <input type="text" id="userInput" placeholder="type smth..." autocomplete="off">
-      <button id="sendBtn">↑</button>
-    </div>
+  <div class="input-container">
+    <input id="userInput" placeholder="type..." />
+    <button id="sendBtn">→</button>
   </div>
 
-  <script src="script.js"></script>
+</div>
+
+<script src="script.js"></script>
+
 </body>
 </html>
