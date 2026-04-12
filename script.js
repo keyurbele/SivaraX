@@ -2,7 +2,7 @@
 let userData = JSON.parse(localStorage.getItem('sivarax_memory')) || {
     name: '',
     voicePreference: 'female',
-    mode: 'listener', // Options: listener, reality-check, feedback
+    mode: 'listener', 
     setupComplete: false
 };
 
@@ -11,7 +11,7 @@ const talkBtn = document.getElementById('talkBtn');
 const backBtn = document.getElementById('backBtn');
 const landingPage = document.querySelector('.landing-page');
 const chatPage = document.querySelector('.chat-page');
-const siriWave = document.getElementById('siriWave'); // The pink glow in CSS
+const siriWave = document.getElementById('siriWave'); 
 
 // --- SETUP LOGIC ---
 window.onload = () => {
@@ -32,7 +32,9 @@ function showSetupOverlay() {
 function setMode(newMode) {
     userData.mode = newMode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`[onclick="setMode('${newMode}')"]`).classList.add('active');
+    // Fixed: Finding the button by its onclick attribute to ensure the UI updates
+    const activeBtn = document.querySelector(`[onclick="setMode('${newMode}')"]`);
+    if (activeBtn) activeBtn.classList.add('active');
     localStorage.setItem('sivarax_memory', JSON.stringify(userData));
 }
 
@@ -86,7 +88,7 @@ async function getAIResponse(message) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 message, 
-                context: userData // Passing the memory and mode to the AI
+                context: userData 
             })
         });
         const data = await response.json();
@@ -114,24 +116,33 @@ if ('webkitSpeechRecognition' in window) {
     };
 }
 
-// Siri-style Hold to Talk
-talkBtn.onmousedown = () => {
+// Siri-style Hold to Talk logic (Desktop + Mobile)
+const startListening = () => {
     if (recognition) {
-        recognition.start();
-        siriWave.style.display = 'block'; // Show the pink pulse
+        try {
+            recognition.start();
+            if (siriWave) siriWave.style.display = 'block';
+        } catch (e) {
+            console.log("Already listening...");
+        }
     }
 };
 
-talkBtn.onmouseup = () => {
+const stopListening = () => {
     if (recognition) {
         recognition.stop();
-        siriWave.style.display = 'none'; // Hide the pulse
+        if (siriWave) siriWave.style.display = 'none';
     }
 };
+
+// Listen for both mouse and touch (for premium mobile feel)
+talkBtn.addEventListener('mousedown', startListening);
+talkBtn.addEventListener('mouseup', stopListening);
+talkBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startListening(); });
+talkBtn.addEventListener('touchend', stopListening);
 
 function speakText(text) {
     const utterance = new SpeechSynthesisUtterance(text);
-    // Adjust pitch based on memory
     utterance.pitch = userData.voicePreference === 'female' ? 1.2 : 0.85;
     utterance.rate = 1;
     speechSynthesis.speak(utterance);
