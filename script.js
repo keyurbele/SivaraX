@@ -1,4 +1,4 @@
-// --- INITIAL STATE & MEMORY ---
+// --- INITIAL STATE ---
 let userData = JSON.parse(localStorage.getItem('sivarax_memory')) || {
     name: '',
     voicePreference: 'female',
@@ -6,93 +6,90 @@ let userData = JSON.parse(localStorage.getItem('sivarax_memory')) || {
     setupComplete: false
 };
 
-// UI Elements
 const landingPage = document.querySelector('.landing-page');
 const chatPage = document.querySelector('.chat-page');
 const setupOverlay = document.getElementById('setupOverlay');
-const nameInput = document.getElementById('nameInput');
 const siriWave = document.getElementById('siriWave');
-const chatWindow = document.getElementById('chatWindow');
 
-// --- SETUP LOGIC (The Premium Way) ---
-window.onload = () => {
-    if (!userData.setupComplete) {
-        setupOverlay.style.display = 'flex';
-    }
-};
+// --- FIX: Unlock Audio for Browsers ---
+function unlockAudio() {
+    const speech = new SpeechSynthesisUtterance(' ');
+    window.speechSynthesis.speak(speech);
+}
 
-// These functions connect to the onclicks in your HTML
-window.setVoice = (gender) => {
-    userData.voicePreference = gender;
-    // Simple visual feedback
-    console.log("Voice set to:", gender);
-};
-
-document.getElementById('finishSetup').onclick = () => {
-    if (nameInput.value.trim() === "") {
-        alert("at least give me a name, fam");
-        return;
-    }
-    userData.name = nameInput.value.trim();
-    userData.setupComplete = true;
-    localStorage.setItem('sivarax_memory', JSON.stringify(userData));
-    setupOverlay.style.display = 'none';
-};
-
-// --- NAVIGATION & QUICK START ---
+// --- NAVIGATION ---
 document.getElementById('chatBtn').onclick = () => {
+    unlockAudio();
     landingPage.style.display = 'none';
     chatPage.style.display = 'flex';
-    appendMessage('ai', `yo ${userData.name}, i'm locked in. what's on your mind?`);
+    if (!userData.setupComplete) {
+        setupOverlay.style.display = 'flex';
+    } else {
+        appendMessage('ai', `yo ${userData.name}, what's on your mind?`);
+    }
 };
 
 document.getElementById('talkBtn').onclick = () => {
+    unlockAudio();
     landingPage.style.display = 'none';
     chatPage.style.display = 'flex';
-    appendMessage('ai', `listening...`);
-    startListening(); // Immediate start from landing page
+    if (!userData.setupComplete) {
+        setupOverlay.style.display = 'flex';
+    } else {
+        setTimeout(startListening, 500); // Give it a moment to switch screens
+    }
 };
 
-document.getElementById('backBtn').onclick = () => {
-    landingPage.style.display = 'flex';
-    chatPage.style.display = 'none';
+// --- SETUP LOGIC ---
+window.setVoice = (gender) => {
+    userData.voicePreference = gender;
+    // Add visual feedback to buttons
+    document.querySelectorAll('.setup-btns button').forEach(btn => btn.style.borderColor = 'var(--glass-border)');
+    event.target.style.borderColor = 'var(--accent-pink)';
 };
 
-// --- CHAT LOGIC ---
-const sendBtn = document.getElementById('sendBtn');
-const userInput = document.getElementById('userInput');
+document.getElementById('finishSetup').onclick = () => {
+    const nameInput = document.getElementById('nameInput');
+    userData.name = nameInput.value || "friend";
+    userData.setupComplete = true;
+    localStorage.setItem('sivarax_memory', JSON.stringify(userData));
+    setupOverlay.style.display = 'none';
+    appendMessage('ai', `yo ${userData.name}, i'm locked in. talk to me.`);
+};
 
-sendBtn.onclick = sendMessage;
-userInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+// --- VOICE LOGIC ---
+let recognition;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechConstructor = window.webkitSpeechRecognition || window.SpeechRecognition;
+    recognition = new SpeechConstructor();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
 
-async function sendMessage() {
-    const text = userInput.value.trim();
-    if (!text) return;
-    appendMessage('user', text);
-    userInput.value = '';
-    const typing = showTyping();
-    const response = await getAIResponse(text);
-    typing.remove();
-    appendMessage('ai', response);
+    recognition.onstart = () => { 
+        if(siriWave) siriWave.style.display = 'block'; 
+    };
+    recognition.onend = () => { 
+        if(siriWave) siriWave.style.display = 'none'; 
+    };
+
+    recognition.onresult = async (event) => {
+        const speech = event.results[0][0].transcript;
+        appendMessage('user', speech);
+        const response = await getAIResponse(speech);
+        appendMessage('ai', response);
+        speakText(response);
+    };
 }
 
-function appendMessage(type, text) {
-    const msg = document.createElement('div');
-    msg.className = type === 'user' ? 'user-msg' : 'ai-msg';
-    msg.innerText = text;
-    chatWindow.appendChild(msg);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
+function startListening() {
+    if (recognition) {
+        try { recognition.start(); } catch (e) { console.log("Mic already active"); }
+    } else {
+        alert("Voice not supported on this browser. Use Chrome/Safari.");
+    }
 }
 
-function showTyping() {
-    const typing = document.createElement('div');
-    typing.id = "typing-indicator";
-    typing.innerText = "sivarax is thinking...";
-    chatWindow.appendChild(typing);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-    return typing;
-}
-
+// --- CHAT & API ---
 async function getAIResponse(message) {
     try {
         const response = await fetch('/api/chat', {
@@ -102,37 +99,20 @@ async function getAIResponse(message) {
         });
         const data = await response.json();
         return data.reply;
-    } catch (e) { return "server's cooked fr... try later"; }
+    } catch (e) { return "server's cooked fr..."; }
 }
 
-// --- VOICE LOGIC (SIRI STYLE) ---
-let recognition;
-if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => { siriWave.style.display = 'block'; };
-    recognition.onend = () => { siriWave.style.display = 'none'; };
-
-    recognition.onresult = async (event) => {
-        const speech = event.results[0][0].transcript;
-        appendMessage('user', speech);
-        const typing = showTyping();
-        const response = await getAIResponse(speech);
-        typing.remove();
-        appendMessage('ai', response);
-        speakText(response);
-    };
-}
-
-function startListening() {
-    if (recognition) {
-        try { recognition.start(); } catch (e) { console.log("already listening"); }
-    }
+function appendMessage(type, text) {
+    const msg = document.createElement('div');
+    msg.className = type === 'user' ? 'user-msg' : 'ai-msg';
+    msg.innerText = text;
+    const win = document.getElementById('chatWindow');
+    win.appendChild(msg);
+    win.scrollTop = win.scrollHeight;
 }
 
 function speakText(text) {
+    window.speechSynthesis.cancel(); 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.pitch = userData.voicePreference === 'female' ? 1.2 : 0.85;
     window.speechSynthesis.speak(utterance);
