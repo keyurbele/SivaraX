@@ -18,9 +18,11 @@
       
       <p>pick my voice vibe:</p>
       <div class="setup-btns">
-        <button onclick="setVoice('female')">soft / female</button>
-        <button onclick="setVoice('male')">deep / male</button>
+        <!-- ✅ FIXED (added 'this') -->
+        <button onclick="setVoice('female', this)">soft / female</button>
+        <button onclick="setVoice('male', this)">deep / male</button>
       </div>
+
       <button id="finishSetup" class="primary-btn">start venting</button>
     </div>
   </div>
@@ -45,14 +47,15 @@
     </div>
 
     <div class="mode-selector">
-      <button class="mode-btn active" onclick="setMode('listener')">listener</button>
-      <button class="mode-btn" onclick="setMode('reality')">reality check</button>
-      <button class="mode-btn" onclick="setMode('feedback')">feedback</button>
+      <!-- ✅ FIXED (added 'this') -->
+      <button class="mode-btn active" onclick="setMode('listener', this)">listener</button>
+      <button class="mode-btn" onclick="setMode('reality', this)">reality check</button>
+      <button class="mode-btn" onclick="setMode('feedback', this)">feedback</button>
     </div>
     
-    <div id="chatWindow">
-      </div>
+    <div id="chatWindow"></div>
 
+    <!-- Siri Wave -->
     <div id="siriWave"></div>
 
     <div class="input-container">
