@@ -1,139 +1,120 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Inter;
+let userData = JSON.parse(localStorage.getItem('data')) || {
+  name: '',
+  voice: 'female',
+  mode: 'listener',
+  setup: false
+};
+
+const landing = document.querySelector('.landing-page');
+const chat = document.querySelector('.chat-page');
+const overlay = document.getElementById('setupOverlay');
+const wave = document.getElementById('siriWave');
+
+const sendBtn = document.getElementById('sendBtn');
+const input = document.getElementById('userInput');
+
+sendBtn.onclick = send;
+input.addEventListener("keypress", e => {
+  if (e.key === "Enter") send();
+});
+
+function send() {
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  append('user', msg);
+  input.value = '';
+
+  getAI(msg).then(r => {
+    setTimeout(() => append('ai', r), 700);
+  });
 }
 
-body {
-  background: #0f0f0f;
-  color: white;
+function append(type, text) {
+  const div = document.createElement('div');
+  div.className = type === 'user' ? 'user-msg' : 'ai-msg';
+  div.innerText = text;
+  chatWindow.appendChild(div);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-/* landing */
-.landing-page {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
+async function getAI(message) {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message,
+      mode: userData.mode,
+      name: userData.name
+    })
+  });
+  const data = await res.json();
+  return data.reply;
 }
 
-/* chat */
-.chat-page {
-  display: none;
-  flex-direction: column;
-  height: 100vh;
-}
+/* nav */
+document.getElementById('chatBtn').onclick = () => {
+  landing.style.display = 'none';
+  chat.style.display = 'flex';
+  if (!userData.setup) overlay.style.display = 'flex';
+};
 
-/* header */
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  border-bottom: 1px solid #222;
-}
-
-/* modes */
-.mode-selector {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-}
-
-.mode-btn {
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: #1a1a1a;
-  border: none;
-  color: white;
-}
-
-.mode-btn.active {
-  background: #2563eb;
-}
-
-/* messages */
-#chatWindow {
-  flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
-}
-
-.user-msg {
-  align-self: flex-end;
-  background: #2563eb;
-  padding: 10px 15px;
-  border-radius: 15px;
-}
-
-.ai-msg {
-  align-self: flex-start;
-  background: #1a1a1a;
-  padding: 10px 15px;
-  border-radius: 15px;
-}
-
-/* input */
-.input-container {
-  display: flex;
-  padding: 10px;
-}
-
-#userInput {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  background: #1a1a1a;
-  color: white;
-}
-
-#sendBtn {
-  margin-left: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #2563eb;
-  border: none;
-  color: white;
-}
-
-/* siri wave */
-#siriWave {
-  display: none;
-  width: 120px;
-  height: 120px;
-  margin: auto;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ff00cc, #3333ff);
-  animation: pulse 1.2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.8); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(0.8); }
-}
+document.getElementById('talkBtn').onclick = () => {
+  landing.style.display = 'none';
+  chat.style.display = 'flex';
+  if (!userData.setup) overlay.style.display = 'flex';
+  else startVoice();
+};
 
 /* setup */
-#setupOverlay {
-  position: fixed;
-  inset: 0;
-  background: black;
-  display: none;
-  justify-content: center;
-  align-items: center;
+function setVoice(v) { userData.voice = v; }
+
+document.getElementById('finishSetup').onclick = () => {
+  userData.name = nameInput.value || "friend";
+  userData.setup = true;
+  localStorage.setItem('data', JSON.stringify(userData));
+  overlay.style.display = 'none';
+};
+
+/* mode */
+function setMode(m, el) {
+  userData.mode = m;
+  localStorage.setItem('data', JSON.stringify(userData));
+
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
 }
 
-.setup-card {
-  background: #111;
-  padding: 30px;
-  border-radius: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+/* voice */
+let rec;
+let listening = false;
+
+function startVoice() {
+  if (!('webkitSpeechRecognition' in window)) return;
+
+  rec = new webkitSpeechRecognition();
+  rec.start();
+  listening = true;
+
+  rec.onstart = () => wave.style.display = 'block';
+  rec.onend = () => {
+    wave.style.display = 'none';
+    if (listening) rec.start();
+  };
+
+  rec.onresult = e => {
+    const speech = e.results[0][0].transcript;
+    append('user', speech);
+
+    getAI(speech).then(r => {
+      append('ai', r);
+      speak(r);
+    });
+  };
+}
+
+function speak(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
 }
