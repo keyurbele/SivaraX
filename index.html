@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SivaraX</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
   <div class="setup-card">
     <h2>Welcome to SivaraX</h2>
 
-    <input type="text" id="nameInput" placeholder="your name...">
+    <input type="text" id="nameInput" placeholder="your name..." />
 
     <div class="setup-btns">
       <button onclick="setVoice('female', this)">female</button>
@@ -30,7 +30,7 @@
 <!-- LANDING -->
 <div class="landing-page">
   <h1>SivaraX</h1>
-  <p>talk to someone</p>
+  <p>talk to someone who listens</p>
 
   <button id="chatBtn">chat</button>
   <button id="talkBtn">talk</button>
@@ -40,8 +40,10 @@
 <div class="chat-page">
 
   <div class="chat-header">
-    <button id="backBtn">back</button>
+    <button id="backBtn">←</button>
     <h2>SivaraX</h2>
+
+    <button id="settingsBtn">⚙</button>
   </div>
 
   <div class="mode-selector">
@@ -56,12 +58,17 @@
 
   <div class="input-container">
     <input id="userInput" placeholder="type..." />
-    <button id="sendBtn">→</button>
+    <button id="sendBtn">↑</button>
   </div>
+</div>
 
+<!-- SETTINGS -->
+<div id="settingsPanel">
+  <h3>Memory</h3>
+  <div id="memoryBox"></div>
+  <button onclick="closeSettings()">close</button>
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
