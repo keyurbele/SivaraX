@@ -8,12 +8,17 @@ let userData = JSON.parse(localStorage.getItem('data')) || {
 const landing = document.querySelector('.landing-page');
 const chat = document.querySelector('.chat-page');
 const overlay = document.getElementById('setupOverlay');
+
+const input = document.getElementById('userInput');
+const chatWindow = document.getElementById('chatWindow');
 const wave = document.getElementById('siriWave');
 
-const sendBtn = document.getElementById('sendBtn');
-const input = document.getElementById('userInput');
+let rec;
+let listening = false;
 
-sendBtn.onclick = send;
+/* SEND MESSAGE */
+document.getElementById('sendBtn').onclick = send;
+
 input.addEventListener("keypress", e => {
   if (e.key === "Enter") send();
 });
@@ -26,10 +31,11 @@ function send() {
   input.value = '';
 
   getAI(msg).then(r => {
-    setTimeout(() => append('ai', r), 700);
+    setTimeout(() => append('ai', r), 600);
   });
 }
 
+/* CHAT UI */
 function append(type, text) {
   const div = document.createElement('div');
   div.className = type === 'user' ? 'user-msg' : 'ai-msg';
@@ -38,21 +44,23 @@ function append(type, text) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
+/* AI */
 async function getAI(message) {
   const res = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       message,
       mode: userData.mode,
       name: userData.name
     })
   });
+
   const data = await res.json();
   return data.reply;
 }
 
-/* nav */
+/* NAV */
 document.getElementById('chatBtn').onclick = () => {
   landing.style.display = 'none';
   chat.style.display = 'flex';
@@ -66,8 +74,16 @@ document.getElementById('talkBtn').onclick = () => {
   else startVoice();
 };
 
-/* setup */
-function setVoice(v) { userData.voice = v; }
+document.getElementById('backBtn').onclick = () => {
+  stopVoice();
+  chat.style.display = 'none';
+  landing.style.display = 'flex';
+};
+
+/* SETUP */
+function setVoice(v, el) {
+  userData.voice = v;
+}
 
 document.getElementById('finishSetup').onclick = () => {
   userData.name = nameInput.value || "friend";
@@ -76,7 +92,7 @@ document.getElementById('finishSetup').onclick = () => {
   overlay.style.display = 'none';
 };
 
-/* mode */
+/* MODE */
 function setMode(m, el) {
   userData.mode = m;
   localStorage.setItem('data', JSON.stringify(userData));
@@ -85,15 +101,31 @@ function setMode(m, el) {
   el.classList.add('active');
 }
 
-/* voice */
-let rec;
-let listening = false;
+/* SETTINGS */
+document.getElementById('settingsBtn').onclick = () => {
+  const panel = document.getElementById('settingsPanel');
+  const box = document.getElementById('memoryBox');
 
+  box.innerHTML = `
+    Name: ${userData.name}<br>
+    Mode: ${userData.mode}<br>
+    Voice: ${userData.voice}
+  `;
+
+  panel.style.display = 'block';
+};
+
+function closeSettings() {
+  document.getElementById('settingsPanel').style.display = 'none';
+}
+
+/* VOICE */
 function startVoice() {
   if (!('webkitSpeechRecognition' in window)) return;
 
   rec = new webkitSpeechRecognition();
-  rec.start();
+  rec.continuous = false;
+  rec.lang = 'en-US';
   listening = true;
 
   rec.onstart = () => wave.style.display = 'block';
@@ -103,17 +135,26 @@ function startVoice() {
   };
 
   rec.onresult = e => {
-    const speech = e.results[0][0].transcript;
-    append('user', speech);
+    const text = e.results[0][0].transcript;
+    append('user', text);
 
-    getAI(speech).then(r => {
+    getAI(text).then(r => {
       append('ai', r);
       speak(r);
     });
   };
+
+  rec.start();
 }
 
+function stopVoice() {
+  listening = false;
+  if (rec) rec.stop();
+}
+
+/* SPEAK */
 function speak(text) {
+  speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 0.9;
   speechSynthesis.speak(u);
