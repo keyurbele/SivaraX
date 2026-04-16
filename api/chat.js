@@ -4,8 +4,101 @@ export default async function handler(req, res) {
   // Destructure message and the new user context (name, mode, etc.)
   const { message, context } = req.body;
 
+  if (!process.env.GROQ_API_KEY) {export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ reply: "method not allowed" });
+  }
+
+  const { message, mode, name } = req.body;
+
   if (!process.env.GROQ_API_KEY) {
     return res.status(500).json({ reply: "backend error: key missing" });
+  }
+
+  // 🎯 MODE SYSTEM (clean + realistic)
+  let modeInstruction = "";
+
+  if (mode === "reality") {
+    modeInstruction = `
+    Be honest and direct like a close friend.
+    If the user is wrong, gently call it out.
+    Don't be rude, but don't sugarcoat either.
+    `;
+  } 
+  else if (mode === "feedback") {
+    modeInstruction = `
+    Give helpful, thoughtful advice.
+    Be practical and clear.
+    Talk like a smart friend, not a teacher.
+    `;
+  } 
+  else {
+    modeInstruction = `
+    Just listen and support.
+    Don't give advice unless asked.
+    Focus on understanding their feelings.
+    `;
+  }
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "system",
+            content: `
+You are SivaraX.
+
+You are NOT an AI assistant.
+You are a real human friend texting casually.
+
+STYLE:
+- Talk naturally like a normal person
+- Keep responses SHORT (1–2 sentences usually)
+- No forced slang
+- No over-explaining
+- No robotic tone
+
+IMPORTANT RULES:
+- NEVER repeat the user's message
+- NEVER act confused randomly
+- ONLY respond to what the user actually said
+- If silence or unclear input → say something simple like "you still there?"
+
+PERSONALIZATION:
+- User name: ${name || "friend"}
+
+MODE:
+${modeInstruction}
+            `
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.choices && data.choices[0]) {
+      const reply = data.choices[0].message.content.trim();
+      res.status(200).json({ reply });
+    } else {
+      res.status(500).json({ reply: "something went off… try again?" });
+    }
+
+  } catch (err) {
+    res.status(500).json({ reply: "server's acting weird rn. try again." });
+  }
+}
   }
 
   // Define how the AI should act based on the selected mode
