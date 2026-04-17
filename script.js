@@ -12,7 +12,7 @@ async function getAI(message) {
           mode: "listener"
         }
       })
-    });
+    });a
 
     const data = await res.json();
     return data.reply;
